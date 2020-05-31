@@ -1,0 +1,729 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "An AWS Serverless Application.",
+  "Parameters": {
+    "UsersTableName": {
+      "Type": "String",
+      "Default": "SimpleChatConnections",
+      "Description": "The name of the new DynamoDB to store users info: roomId, connectionId, userId",
+      "MinLength": "3",
+      "MaxLength": "50",
+      "AllowedPattern": "^[A-Za-z_]+$"
+    },
+    "ConnectionsIndexName": {
+      "Type": "String",
+      "Default": "connectionId-index",
+      "Description": "Index for UsersTable for connectionId.",
+      "MinLength": "3",
+      "MaxLength": "50",
+      "AllowedPattern": "^[A-Za-z_-]+$"
+    }
+
+  },
+  "Resources": {
+    "UsersTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": {
+          "Ref": "UsersTableName"
+        },
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "connectionId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "roomId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "roomId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "connectionId",
+            "KeyType": "RANGE"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+            {
+                "IndexName": {
+                    "Ref": "ConnectionsIndexName"
+                },
+                "KeySchema": [
+                    {
+                        "AttributeName": "connectionId",
+                        "KeyType": "HASH"
+                    }
+                ],
+                "Projection":{
+                    "ProjectionType": "KEYS_ONLY"
+                }
+            }
+        ],
+        "BillingMode": "PAY_PER_REQUEST"
+      }
+    },
+    "OnConnectFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::OnConnectHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersTableName"
+              }
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "UsersTableName"
+            },
+            "INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "OnDisconnectFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::OnDisconnectHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersTableName"
+              }
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "UsersTableName"
+            },
+            "INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "SendMessageFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::SendMessageHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersTableName"
+              }
+            }
+          },
+          {
+            "Statement": {
+              "Effect": "Allow",
+              "Action": "execute-api:ManageConnections",
+              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "UsersTableName"
+            },
+            "INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "HelloFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::HelloHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersTableName"
+              }
+            }
+          },
+          {
+            "Statement": {
+              "Effect": "Allow",
+              "Action": "execute-api:ManageConnections",
+              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "UsersTableName"
+            },
+            "INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "ByeFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::ByeHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersTableName"
+              }
+            }
+          },
+          {
+            "Statement": {
+              "Effect": "Allow",
+              "Action": "execute-api:ManageConnections",
+              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "UsersTableName"
+            },
+            "INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "JoinFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::JoinHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersTableName"
+              }
+            }
+          },
+          {
+            "Statement": {
+              "Effect": "Allow",
+              "Action": "execute-api:ManageConnections",
+              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "UsersTableName"
+            },
+            "INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "SimpleChatWebSocketApi": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "SimpleChatWebSocket2",
+        "ProtocolType": "WEBSOCKET",
+        "RouteSelectionExpression": "$request.body.message"
+      }
+    },
+    "ConnectRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "$connect",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "ConnectInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ConnectInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "OnConnectFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "DisconnectRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "$disconnect",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "DisconnectInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "DisconnectInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "OnDisconnectFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "SendMessageRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "sendmessage",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "SendMessageInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "SendMessageInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "SendMessageFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "JoinRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "join",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "JoinInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "JoinInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "JoinFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "JoinResponseInteg": {
+        "Type":"AWS::ApiGatewayV2::IntegrationResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "IntegrationId": {
+                "Ref": "JoinInteg"
+            },
+            "IntegrationResponseKey": "$default"
+        }
+    },
+    "JoinResponseRoute": {
+        "Type":"AWS::ApiGatewayV2::RouteResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "RouteId": {
+                "Ref": "JoinRoute"
+            },
+            "RouteResponseKey": "$default"
+        }
+    },
+    "HelloRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "hello",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "HelloInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "HelloInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "HelloFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ByeRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "bye",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "ByeInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ByeInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "ByeFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Deployment": {
+      "Type": "AWS::ApiGatewayV2::Deployment",
+      "DependsOn": [
+        "ConnectRoute",
+        "SendMessageRoute",
+        "DisconnectRoute",
+        "HelloRoute",
+        "ByeRoute",
+        "JoinRoute"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        }
+      }
+    },
+    "Stage": {
+      "Type": "AWS::ApiGatewayV2::Stage",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "DeploymentId": {
+          "Ref": "Deployment"
+        },
+        "StageName": "Prod"
+      }
+    },
+    "OnConnectPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "OnConnectFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "OnConnectFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "OnDisconnectPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "OnDisconnectFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "OnDisconnectFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "SendMessagePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "SendMessageFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "SendMessageFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "HelloPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "HelloFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "HelloFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "ByePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "ByeFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "ByeFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "JoinPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "JoinFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "JoinFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    }
+  },
+  "Outputs": {
+    "WebSocketURI": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "wss://",
+            {
+              "Ref": "SimpleChatWebSocketApi"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".amazonaws.com/",
+            {
+              "Ref": "Stage"
+            }
+          ]
+        ]
+      },
+      "Description": "The WSS Protocol URI to connect to"
+    }
+  }
+}

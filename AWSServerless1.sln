@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29920.165
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AWSServerless1", "AWSServerless1\AWSServerless1.csproj", "{A2DB01C3-E109-4D5B-8B52-758525CA662D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Debug|x86.Build.0 = Debug|Any CPU
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Release|x86.ActiveCfg = Release|Any CPU
+		{A2DB01C3-E109-4D5B-8B52-758525CA662D}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B0546AA6-E850-4CC2-BE8B-F9DC043D67C7}
+	EndGlobalSection
+EndGlobal

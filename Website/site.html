@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<head>
+    <title>tytul</title>
+</head>
+<body>
+    <div>
+        <label for="fname">Send message:</label>
+        <input type="text" id="fname" name="fname"><br><br>
+        <button onclick="sendText()">Send!</button>
+    </div>
+    <ul id="messages">
+
+    </ul>
+
+    <div>
+        <label for="roomid">Room name:</label>
+        <input type="text" id="roomid" name="roomid">
+        <label for="userid">User name:</label>
+        <input type="text" id="userid" name="userid"><br><br>
+        <button onclick="join()">Join!</button>
+    </div>
+
+    <div>
+        <h2>Room: <span id="roomval">none</span></h2>
+        <h2>User: <span id="userval">none</span></h2>
+    </div>
+</body>
+
+
+<script>
+    var exampleSocket = new WebSocket("wss://o89ag8rd5a.execute-api.eu-north-1.amazonaws.com/Prod");
+    var roomId = ""
+    var userId = ""
+
+    function sendText() {
+        const msg = {
+            message: "sendmessage",
+            data: {
+                roomId: roomId,
+                userId: userId,
+                message: document.getElementById("fname").value
+            }
+        };
+        exampleSocket.send(JSON.stringify(msg));
+    }
+
+    function join() {
+        const msg = {
+            message: "join",
+            roomId: document.getElementById("roomid").value,
+            userId: document.getElementById("userid").value
+        };
+        exampleSocket.send(JSON.stringify(msg));
+    }
+    
+    function hello() {
+        const msg = {
+            message: "hello"
+        };
+        exampleSocket.send(JSON.stringify(msg));
+    }
+
+    exampleSocket.onopen = function(event) {
+        hello();
+    }
+
+    exampleSocket.onmessage = function(event) {
+        let response = JSON.parse(event.data);
+        switch(response.messageType) {
+            case 'JoinResponse':
+                roomId = response.roomId;
+                userId = response.userId
+                document.getElementById('roomval').innerHTML = roomId;
+                document.getElementById('userval').innerHTML = userId;
+                break;
+            case 'ChatMessageResponse':
+                var ul = document.getElementById("messages");
+                var li = document.createElement("li");
+                li.appendChild(document.createTextNode(response.date + "  " + response.author + " : " + response.message ));
+                ul.appendChild(li);
+                break;
+        }
+    }
+
+</script>
