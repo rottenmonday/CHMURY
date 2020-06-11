@@ -9,10 +9,12 @@
     <script src="bootstrap/js/bootstrap.js"></script>
 </head>
 <body>
-    <div id="login">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username"><br><br>
-        <button onclick="login()">Login!</button>
+    <div id="login" style="margin: 20px; max-width: 250px">
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" class="form-control" id="username" placeholder="Enter username">
+          </div>
+          <button type="submit" class="btn btn-primary" onclick="login()">Login!</button>
     </div>
     <div id="waiting" style="display: none">
         <h3>Waiting...</h3>
