@@ -1,0 +1,14 @@
+.chosen-container.chosen-container-multi {
+    width: 300px !important; /* or any value that fits your needs */
+}
+/* #mmenu_screen > .row {
+    min-height: 100vh;
+}
+
+.flex-fill {
+    flex:1 1 auto;
+}
+
+html,body {
+    height: 100%;
+  } */

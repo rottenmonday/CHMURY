@@ -5,9 +5,8 @@ using System.Text.Json.Serialization;
 
 namespace AWSServerless1.Models.InMessages
 {
-    public class JoinRequest
+    public class LoginRequest
     {
-        public string User1ID { get; set; }
-        public string User2ID { get; set; }
+        public string UserID { get; set; }
     }
 }

@@ -5,15 +5,15 @@ using System.Text.Json.Serialization;
 
 namespace AWSServerless1.Models.OutMessages
 {
-    public class JoinResponse : ServerMessage
+    public class AddRoomResponse : ServerMessage
     {
         [JsonPropertyName("messageType")]
-        public MessageType MessageType { get; set; } = MessageType.JoinResponse;
+        public MessageType MessageType { get; set; } = MessageType.AddRoomResponse;
         [JsonPropertyName("success")]
         public bool Success { get; set; }
+        [JsonPropertyName("roomId")]
+        public string RoomId { get; set; }
         [JsonPropertyName("roomName")]
         public string RoomName { get; set; }
-        [JsonPropertyName("roomId")]
-        public string RoomID { get; set; }
     }
 }

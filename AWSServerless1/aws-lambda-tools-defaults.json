@@ -12,7 +12,7 @@
     "framework"     : "netcoreapp3.1",
     "s3-prefix"     : "AWSServerless1/",
     "template"      : "serverless.template",
-    "template-parameters" : "\"UsersTableName\"=\"UsersTable\";\"ConnectionsIndexName\"=\"connectionId-index\"",
+    "template-parameters" : "\"UsersRoomsTableName\"=\"UsersRoomsTable\";\"RoomsConnectionsTableName\"=\"RoomsConnectionsTableT\";\"UsersIndexName\"=\"UsersId-index\";\"ConnectionsIndexName\"=\"ConnectionsId-index\"",
     "s3-bucket"           : "test-bucket-cos",
     "stack-name"          : "chat-appka3"
 }

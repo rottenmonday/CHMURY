@@ -8,6 +8,7 @@ namespace AWSServerless1.Models.OutMessages
     public interface ServerMessage
     {
         public MessageType MessageType { get; set; }
+        public bool Success { get; set; }
 
     }
 }

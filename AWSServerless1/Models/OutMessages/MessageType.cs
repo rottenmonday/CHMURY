@@ -9,6 +9,8 @@ namespace AWSServerless1.Models.OutMessages
     public enum MessageType
     {
         JoinResponse,
-        ChatMessageResponse
+        ChatMessageResponse,
+        LoginResponse,
+        AddRoomResponse
     }
 }

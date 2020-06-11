@@ -9,6 +9,8 @@ namespace AWSServerless1.Models.OutMessages
     {
         [JsonPropertyName("messageType")]
         public MessageType MessageType { get; set; } = MessageType.ChatMessageResponse;
+        [JsonPropertyName("success")]
+        public bool Success { get; set; }
         [JsonPropertyName("message")]
         public string Message { get; set; }
         [JsonPropertyName("author")]

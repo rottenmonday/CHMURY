@@ -19,6 +19,7 @@ using Amazon.ApiGatewayManagementApi.Model;
 
 using AWSServerless1.Models.OutMessages;
 using AWSServerless1.Models.InMessages;
+using AWSServerless1.Utility;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -35,8 +36,12 @@ namespace AWSServerless1
         /// <summary>
         /// DynamoDB table used to store the open connection ids. More advanced use cases could store logged on user map to their connection id to implement direct message chatting.
         /// </summary>
-        string UsersTable { get; }
-        string ConnectionsIndex { get; }
+        string UsersRoomsTable { get; }
+        string RoomsConnectionsTable { get; }
+        string UsersIndex { get; }
+        string ConnectionsIndex { get;  }
+        //string ConnectionsIndex { get; }
+        DDBWrappers DDBUtils { get; set; }
 
         /// <summary>
         /// DynamoDB service client used to store and retieve connection information from the ConnectionMappingTable
@@ -58,8 +63,10 @@ namespace AWSServerless1
             DDBClient = new AmazonDynamoDBClient();
 
             // Grab the name of the DynamoDB from the environment variable setup in the CloudFormation template serverless.template
-            UsersTable = System.Environment.GetEnvironmentVariable("TABLE_NAME");
-            ConnectionsIndex = System.Environment.GetEnvironmentVariable("INDEX_NAME");
+            UsersRoomsTable = System.Environment.GetEnvironmentVariable("USERS_ROOMS_TABLE_NAME");
+            RoomsConnectionsTable = System.Environment.GetEnvironmentVariable("ROOMS_CONNECTIONS_TABLE_NAME");
+            UsersIndex = System.Environment.GetEnvironmentVariable("USERS_INDEX_NAME");
+            ConnectionsIndex = System.Environment.GetEnvironmentVariable("CONNECTIONS_INDEX_NAME");
 
             this.ApiGatewayManagementApiClientFactory = (Func<string, AmazonApiGatewayManagementApiClient>)((endpoint) => 
             {
@@ -68,6 +75,8 @@ namespace AWSServerless1
                     ServiceURL = endpoint
                 });
             });
+            DDBUtils = new DDBWrappers(DDBClient, ApiGatewayManagementApiClientFactory,
+                                        UsersRoomsTable, RoomsConnectionsTable, UsersIndex, ConnectionsIndex);
         }
 
         /// <summary>
@@ -80,28 +89,13 @@ namespace AWSServerless1
         {
             this.DDBClient = ddbClient;
             this.ApiGatewayManagementApiClientFactory = apiGatewayManagementApiClientFactory;
-            this.UsersTable = usersTable;
+            this.UsersRoomsTable = usersTable;
         }
 
         public async Task<APIGatewayProxyResponse> OnConnectHandler(APIGatewayProxyRequest request, ILambdaContext context)
         {
             try
             {
-                var connectionId = request.RequestContext.ConnectionId;
-                context.Logger.LogLine($"ConnectionId: {connectionId}");
-
-                var ddbRequest = new PutItemRequest
-                {
-                    TableName = UsersTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        {RoomIdField, new AttributeValue { S = TempRoomName } },
-                        {ConnectionIdField, new AttributeValue { S = connectionId}}
-                    }
-                };
-
-                await DDBClient.PutItemAsync(ddbRequest);
-
                 return new APIGatewayProxyResponse
                 {
                     StatusCode = 200,
@@ -120,6 +114,47 @@ namespace AWSServerless1
             }
         }
 
+        public async Task<APIGatewayProxyResponse> AddRoomHandler(APIGatewayProxyRequest request, ILambdaContext context)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                };
+                AddRoomRequest doc = JsonSerializer.Deserialize<AddRoomRequest>(request.Body, options);
+                doc.OtherUsers.Add(doc.UserId);
+                string roomId = await DDBUtils.AddCustomRoom(doc.OtherUsers, doc.RoomName);
+                AddRoomResponse responseMsg = new AddRoomResponse()
+                {
+                    Success = true,
+                    RoomId = roomId,
+                    RoomName = doc.RoomName
+                };
+
+                return new APIGatewayProxyResponse
+                {
+                    StatusCode = 200,
+                    Body = JsonSerializer.Serialize(responseMsg)
+                };
+            }
+
+            catch (Exception e)
+            {
+                context.Logger.LogLine("Error adding room: " + e.Message);
+                context.Logger.LogLine(e.StackTrace);
+                AddRoomResponse responseMsg = new AddRoomResponse()
+                {
+                    Success = false
+                };
+                return new APIGatewayProxyResponse
+                {
+                    StatusCode = 500,
+                    Body = JsonSerializer.Serialize(responseMsg)
+                };
+            }
+        }
+
         public async Task<APIGatewayProxyResponse> JoinHandler(APIGatewayProxyRequest request, ILambdaContext context)
         {
             try
@@ -131,41 +166,13 @@ namespace AWSServerless1
                 };
                 JoinRequest doc = JsonSerializer.Deserialize<JoinRequest>(request.Body, options);
 
-                //var ddbRequest = new UpdateItemRequest
-                //{
-                //    TableName = ConnectionMappingTable,
-                //    Key = new Dictionary<string, AttributeValue>
-                //    {
-                //        {RoomIdField, new AttributeValue { S = TempRoomName } },
-                //        {ConnectionIdField, new AttributeValue{ S = connectionId}}
-                //    },
-                //    UpdateExpression = "SET roomId = :ri, userId = :ui",
-                //    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-                //    {
-                //         {":ri", new AttributeValue{ S = doc.RoomID}},
-                //         {":ui", new AttributeValue{ S = doc.UserID}}
-                //    }
-                //};
-
-                var ddbRequest = new PutItemRequest
-                {
-                    TableName = UsersTable,
-                    Item = new Dictionary<string, AttributeValue>
-                    {
-                        { RoomIdField, new AttributeValue { S = doc.RoomID } },
-                        { ConnectionIdField, new AttributeValue { S = connectionId}},
-                        { UserIdField, new AttributeValue { S = doc.UserID }}
-                    }
-                };
-
-                await DDBClient.PutItemAsync(ddbRequest);
-
-                //await DDBClient.UpdateItemAsync(ddbRequest);
+                string roomId = await DDBUtils.GenerateNormalRoom(doc.User1ID, doc.User2ID);
 
                 JoinResponse responseMsg = new JoinResponse()
                 {
-                    RoomID = doc.RoomID,
-                    UserID = doc.UserID
+                    RoomName = "Conversation with " + doc.User2ID,
+                    RoomID = roomId,
+                    Success = true
                 };
 
                 return new APIGatewayProxyResponse
@@ -178,14 +185,74 @@ namespace AWSServerless1
             {
                 context.Logger.LogLine("Error connecting: " + e.Message);
                 context.Logger.LogLine(e.StackTrace);
+                JoinResponse responseMsg = new JoinResponse()
+                {
+                    Success = false
+                };
                 return new APIGatewayProxyResponse
                 {
                     StatusCode = 500,
-                    Body = $"Failed to connect: {e.Message}"
+                    Body = JsonSerializer.Serialize(responseMsg)
                 };
             }
         }
-    
+
+        public async Task<APIGatewayProxyResponse> LoginHandler(APIGatewayProxyRequest request, ILambdaContext context)
+        {
+            try
+            {
+                var connectionId = request.RequestContext.ConnectionId;
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                };
+                LoginRequest logRequest = JsonSerializer.Deserialize<LoginRequest>(request.Body, options);
+                var ddbRequest = new PutItemRequest
+                {
+                    TableName = UsersRoomsTable,
+                    Item = new Dictionary<string, AttributeValue>
+                    {
+                        { "NodeId", new AttributeValue { S = "user-" + logRequest.UserID } },
+                        { "TargetId", new AttributeValue { S = "user-" + logRequest.UserID }},
+                        { "UserId", new AttributeValue { S = logRequest.UserID }}
+                    }
+                };
+
+                await DDBUtils.AddUserToHisRooms(logRequest.UserID, connectionId);
+                await DDBClient.PutItemAsync(ddbRequest);
+
+                var customRoomsInfo = await DDBUtils.GetUserCustomRooms(logRequest.UserID);
+
+                LoginResponse responseMsg = new LoginResponse()
+                {
+                    Success = true,
+                    Users = await DDBUtils.GetAllUsers(),
+                    CustomRoomsNames = customRoomsInfo.Item1,
+                    CustomRoomsIds = customRoomsInfo.Item2
+                };
+
+                return new APIGatewayProxyResponse
+                {
+                    StatusCode = (int)HttpStatusCode.OK,
+                    Body = JsonSerializer.Serialize(responseMsg)
+                };
+            }
+
+            catch (Exception e)
+            {
+                context.Logger.LogLine("Error logging in: " + e.Message);
+                context.Logger.LogLine(e.StackTrace);
+                LoginResponse responseMsg = new LoginResponse()
+                {
+                    Success = false
+                };
+                return new APIGatewayProxyResponse
+                {
+                    StatusCode = (int)HttpStatusCode.InternalServerError,
+                    Body = JsonSerializer.Serialize(responseMsg)
+                };
+            }
+        }
 
         public async Task<APIGatewayProxyResponse> SendMessageHandler(APIGatewayProxyRequest request, ILambdaContext context)
         {
@@ -250,7 +317,7 @@ namespace AWSServerless1
 
                 var queryRequest = new QueryRequest
                 {
-                    TableName = UsersTable,
+                    TableName = RoomsConnectionsTable,
                     KeyConditionExpression = "roomId = :ri",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue> {
                         {":ri", new AttributeValue { S =  messageRequest.RoomID }}
@@ -289,7 +356,7 @@ namespace AWSServerless1
                         {
                             var ddbDeleteRequest = new DeleteItemRequest
                             {
-                                TableName = UsersTable,
+                                TableName = RoomsConnectionsTable,
                                 Key = new Dictionary<string, AttributeValue>
                                 {
                                     {ConnectionIdField, new AttributeValue {S = postConnectionRequest.ConnectionId}}
@@ -391,33 +458,7 @@ namespace AWSServerless1
                 var connectionId = request.RequestContext.ConnectionId;
                 context.Logger.LogLine($"ConnectionId: {connectionId}");
 
-                var queryRequest = new QueryRequest
-                {
-                    TableName = UsersTable,
-                    IndexName = ConnectionsIndex,
-                    KeyConditionExpression = "connectionId = :ci",
-                    ExpressionAttributeValues = new Dictionary<string, AttributeValue> {
-                        {":ci", new AttributeValue { S =  connectionId }}
-                     },
-                    ProjectionExpression = $"{ConnectionIdField}, {RoomIdField}"
-                };
-
-                var queryResponse = await DDBClient.QueryAsync(queryRequest);
-
-                foreach(var item in queryResponse.Items)
-                {
-                    var ddbRequest = new DeleteItemRequest
-                    {
-                        TableName = UsersTable,
-                        Key = new Dictionary<string, AttributeValue>
-                    {
-                        { RoomIdField, new AttributeValue { S = item[RoomIdField].S } },
-                        { ConnectionIdField, new AttributeValue { S = item[ConnectionIdField].S } }
-                    }
-                    };
-
-                    await DDBClient.DeleteItemAsync(ddbRequest);
-                }
+                await DDBUtils.RemoveConnectionFromTable(connectionId);
 
                 return new APIGatewayProxyResponse
                 {

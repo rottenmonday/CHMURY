@@ -1,0 +1,8 @@
+    "ConnectionsIndexName": {
+      "Type": "String",
+      "Default": "connectionId-index",
+      "Description": "Index for UsersTable for connectionId.",
+      "MinLength": "3",
+      "MaxLength": "50",
+      "AllowedPattern": "^[A-Za-z_-]+$"
+    }

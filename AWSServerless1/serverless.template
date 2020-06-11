@@ -3,69 +3,133 @@
   "Transform": "AWS::Serverless-2016-10-31",
   "Description": "An AWS Serverless Application.",
   "Parameters": {
-    "UsersTableName": {
+    "UsersRoomsTableName": {
       "Type": "String",
-      "Default": "SimpleChatConnections",
-      "Description": "The name of the new DynamoDB to store users info: roomId, connectionId, userId",
+      "Default": "UsersRoomsTable",
+      "Description": "The name of the new DynamoDB table to store users and room info (many-to-many)",
       "MinLength": "3",
       "MaxLength": "50",
       "AllowedPattern": "^[A-Za-z_]+$"
     },
+    "RoomsConnectionsTableName": {
+      "Type": "String",
+      "Default": "RoomsConnectionsTable",
+      "Description": "The name of the new DynamoDB to store webosocket IDs connected for each room",
+      "MinLength": "3",
+      "MaxLength": "50",
+      "AllowedPattern": "^[A-Za-z_]+$"
+    },
+    "UsersIndexName": {
+      "Type": "String",
+      "Default": "UsersId-index",
+      "Description": "Index for UsersRoomsTable to retrieve all users",
+      "MinLength": "3",
+      "MaxLength": "50",
+      "AllowedPattern": "^[A-Za-z_-]+$"
+    },
     "ConnectionsIndexName": {
       "Type": "String",
-      "Default": "connectionId-index",
-      "Description": "Index for UsersTable for connectionId.",
+      "Default": "ConnectionsId-index",
+      "Description": "Index for ConnectionsId to retrieve all connections from given websocket (and delete them)",
       "MinLength": "3",
       "MaxLength": "50",
       "AllowedPattern": "^[A-Za-z_-]+$"
     }
-
   },
   "Resources": {
-    "UsersTable": {
+    "UsersRoomsTable": {
       "Type": "AWS::DynamoDB::Table",
       "Properties": {
-        "TableName": {
-          "Ref": "UsersTableName"
-        },
-        "AttributeDefinitions": [
-          {
-            "AttributeName": "connectionId",
-            "AttributeType": "S"
-          },
-          {
-            "AttributeName": "roomId",
-            "AttributeType": "S"
-          }
-        ],
-        "KeySchema": [
-          {
-            "AttributeName": "roomId",
-            "KeyType": "HASH"
-          },
-          {
-            "AttributeName": "connectionId",
-            "KeyType": "RANGE"
-          }
-        ],
-        "GlobalSecondaryIndexes": [
-            {
-                "IndexName": {
-                    "Ref": "ConnectionsIndexName"
-                },
-                "KeySchema": [
-                    {
-                        "AttributeName": "connectionId",
-                        "KeyType": "HASH"
+            "TableName": {
+                "Ref": "UsersRoomsTableName"
+            },
+            "GlobalSecondaryIndexes": [
+                {
+                    "IndexName": {
+                        "Ref": "UsersIndexName"
+                    },
+                    "KeySchema": [
+                        {
+                            "AttributeName": "UserId",
+                            "KeyType": "HASH"
+                        }
+                    ],
+                    "Projection": {
+                        "ProjectionType": "KEYS_ONLY"
                     }
-                ],
-                "Projection":{
-                    "ProjectionType": "KEYS_ONLY"
                 }
+            ],
+            "AttributeDefinitions": [
+                {
+                    "AttributeName": "NodeId",
+                    "AttributeType": "S"
+                },
+                {
+                    "AttributeName": "TargetId",
+                    "AttributeType": "S"
+                },
+                {
+                    "AttributeName": "UserId",
+                    "AttributeType": "S"
+                }
+            ],
+            "KeySchema": [
+                {
+                "AttributeName": "NodeId",
+                "KeyType": "HASH"
+                },
+                {
+                "AttributeName": "TargetId",
+                "KeyType": "RANGE"
+                }
+            ],
+            "BillingMode": "PAY_PER_REQUEST"
             }
-        ],
-        "BillingMode": "PAY_PER_REQUEST"
-      }
+     },
+    "RoomsConnectionsTable": {
+        "Type": "AWS::DynamoDB::Table",
+        "Properties": {
+            "TableName": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "GlobalSecondaryIndexes": [
+                {
+                    "IndexName": {
+                        "Ref": "ConnectionsIndexName"
+                    },
+                    "KeySchema": [
+                        {
+                            "AttributeName": "ConnectionId",
+                            "KeyType": "HASH"
+                        }
+                    ],
+                    "Projection": {
+                        "ProjectionType": "KEYS_ONLY"
+                    }
+                }
+            ],
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "ConnectionId",
+                "AttributeType": "S"
+              },
+              {
+                "AttributeName": "RoomId",
+                "AttributeType": "S"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "RoomId",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "ConnectionId",
+                "KeyType": "RANGE"
+              }
+            ],
+            "BillingMode": "PAY_PER_REQUEST"
+        }
     },
     "OnConnectFunction": {
       "Type": "AWS::Serverless::Function",
@@ -80,17 +144,30 @@
           {
             "DynamoDBCrudPolicy": {
               "TableName": {
-                "Ref": "UsersTableName"
+                "Ref": "UsersRoomsTable"
+              }
+            }
+          },
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
               }
             }
           }
         ],
         "Environment": {
           "Variables": {
-            "TABLE_NAME": {
-              "Ref": "UsersTableName"
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
             },
-            "INDEX_NAME": {
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
               "Ref": "ConnectionsIndexName"
             }
           }
@@ -110,17 +187,30 @@
           {
             "DynamoDBCrudPolicy": {
               "TableName": {
-                "Ref": "UsersTableName"
+                "Ref": "UsersRoomsTable"
+              }
+            }
+          },
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
               }
             }
           }
         ],
         "Environment": {
           "Variables": {
-            "TABLE_NAME": {
-              "Ref": "UsersTableName"
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
             },
-            "INDEX_NAME": {
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
               "Ref": "ConnectionsIndexName"
             }
           }
@@ -140,24 +230,30 @@
           {
             "DynamoDBCrudPolicy": {
               "TableName": {
-                "Ref": "UsersTableName"
+                "Ref": "UsersRoomsTable"
               }
             }
           },
           {
-            "Statement": {
-              "Effect": "Allow",
-              "Action": "execute-api:ManageConnections",
-              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
+              }
             }
           }
         ],
         "Environment": {
           "Variables": {
-            "TABLE_NAME": {
-              "Ref": "UsersTableName"
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
             },
-            "INDEX_NAME": {
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
               "Ref": "ConnectionsIndexName"
             }
           }
@@ -177,24 +273,30 @@
           {
             "DynamoDBCrudPolicy": {
               "TableName": {
-                "Ref": "UsersTableName"
+                "Ref": "UsersRoomsTable"
               }
             }
           },
           {
-            "Statement": {
-              "Effect": "Allow",
-              "Action": "execute-api:ManageConnections",
-              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
+              }
             }
           }
         ],
         "Environment": {
           "Variables": {
-            "TABLE_NAME": {
-              "Ref": "UsersTableName"
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
             },
-            "INDEX_NAME": {
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
               "Ref": "ConnectionsIndexName"
             }
           }
@@ -214,24 +316,30 @@
           {
             "DynamoDBCrudPolicy": {
               "TableName": {
-                "Ref": "UsersTableName"
+                "Ref": "UsersRoomsTable"
               }
             }
           },
           {
-            "Statement": {
-              "Effect": "Allow",
-              "Action": "execute-api:ManageConnections",
-              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
+              }
             }
           }
         ],
         "Environment": {
           "Variables": {
-            "TABLE_NAME": {
-              "Ref": "UsersTableName"
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
             },
-            "INDEX_NAME": {
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
               "Ref": "ConnectionsIndexName"
             }
           }
@@ -251,24 +359,116 @@
           {
             "DynamoDBCrudPolicy": {
               "TableName": {
-                "Ref": "UsersTableName"
+                "Ref": "UsersRoomsTable"
               }
             }
           },
           {
-            "Statement": {
-              "Effect": "Allow",
-              "Action": "execute-api:ManageConnections",
-              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
+              }
             }
           }
         ],
         "Environment": {
           "Variables": {
-            "TABLE_NAME": {
-              "Ref": "UsersTableName"
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
             },
-            "INDEX_NAME": {
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "LoginFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::LoginHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersRoomsTable"
+              }
+            }
+          },
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
+              }
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
+            },
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "AddRoomFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::AddRoomHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersRoomsTable"
+              }
+            }
+          },
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
+              }
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
+            },
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
               "Ref": "ConnectionsIndexName"
             }
           }
@@ -495,6 +695,148 @@
             "RouteResponseKey": "$default"
         }
     },
+    "LoginRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "login",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "LoginInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "LoginInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "LoginFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "LoginResponseInteg": {
+        "Type":"AWS::ApiGatewayV2::IntegrationResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "IntegrationId": {
+                "Ref": "LoginInteg"
+            },
+            "IntegrationResponseKey": "$default"
+        }
+    },
+    "LoginResponseRoute": {
+        "Type":"AWS::ApiGatewayV2::RouteResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "RouteId": {
+                "Ref": "LoginRoute"
+            },
+            "RouteResponseKey": "$default"
+        }
+    },
+    "AddRoomRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "addroom",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "AddRoomInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "AddRoomInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "AddRoomFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AddRoomResponseInteg": {
+        "Type":"AWS::ApiGatewayV2::IntegrationResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "IntegrationId": {
+                "Ref": "AddRoomInteg"
+            },
+            "IntegrationResponseKey": "$default"
+        }
+    },
+    "AddRoomResponseRoute": {
+        "Type":"AWS::ApiGatewayV2::RouteResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "RouteId": {
+                "Ref": "AddRoomRoute"
+            },
+            "RouteResponseKey": "$default"
+        }
+    },
     "HelloRoute": {
       "Type": "AWS::ApiGatewayV2::Route",
       "Properties": {
@@ -597,7 +939,9 @@
         "DisconnectRoute",
         "HelloRoute",
         "ByeRoute",
-        "JoinRoute"
+        "JoinRoute",
+        "LoginRoute",
+        "AddRoomRoute"
       ],
       "Properties": {
         "ApiId": {
@@ -697,6 +1041,34 @@
         "Action": "lambda:InvokeFunction",
         "FunctionName": {
           "Ref": "JoinFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "LoginPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "LoginFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "LoginFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "AddRoomPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "AddRoomFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "AddRoomFunction"
         },
         "Principal": "apigateway.amazonaws.com"
       }

@@ -1,37 +1,108 @@
 <!DOCTYPE html>
 <head>
     <title>tytul</title>
+    <link href="https://cdn.rawgit.com/harvesthq/chosen/gh-pages/chosen.min.css" rel="stylesheet" type="text/css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.rawgit.com/harvesthq/chosen/gh-pages/chosen.jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.css">
+    <script src="bootstrap/js/bootstrap.js"></script>
 </head>
 <body>
-    <div>
-        <label for="fname">Send message:</label>
-        <input type="text" id="fname" name="fname"><br><br>
-        <button onclick="sendText()">Send!</button>
+    <div id="login">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br><br>
+        <button onclick="login()">Login!</button>
     </div>
-    <ul id="messages">
+    <div id="waiting" style="display: none">
+        <h3>Waiting...</h3>
+    </div>
+    <div id="main_app" style="display: none">
+        <!-- <div>
+            <label for="fname">Send message:</label>
+            <input type="text" id="fname" name="fname"><br><br>
+            <button onclick="sendText()">Send!</button>
+        </div>
+        <ul id="messages">
+    
+        </ul>
+    
+        <div>
+            <label for="roomid">Room name:</label>
+            <input type="text" id="roomid" name="roomid">
+            <label for="userid">User name:</label>
+            <input type="text" id="userid" name="userid"><br><br>
+            <button onclick="join()">Join!</button>
+        </div>
+    
+        <div>
+            <h2>Room: <span id="roomval">none</span></h2>
+            <h2>User: <span id="userval">none</span></h2>
+        </div> -->
+        
+        
+        <div style="display: none">
+            <h1>Add room:</h1>
+            <label for="selectUsers">Users: </label>
+            <select data-placeholder="Begin typing a name to filter..." multiple class="chosen-select" name="test" id="selectUsers">
+                <option value=""></option>
+            </select><br><br>
+            <label for="newRoomName">Room name:</label>
+            <input type="text" id="newRoomName" name="newRoomName"><br><br>
+            <button onclick="addRoom()">Add!</button>
+        </div>
 
-    </ul>
 
-    <div>
-        <label for="roomid">Room name:</label>
-        <input type="text" id="roomid" name="roomid">
-        <label for="userid">User name:</label>
-        <input type="text" id="userid" name="userid"><br><br>
-        <button onclick="join()">Join!</button>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-10" style="border-right: 1px dashed black; border-bottom: 1px dashed black;">
+                    <div id="chat" style="display: none">
+                        <h1 id="roomName"></h1>
+                        <label for="fname">Send message:</label>
+                        <input type="text" id="fname" name="fname"><br><br>
+                        <button onclick="sendText()">Send!</button>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card" style="overflow:auto; max-height: 40vh;">
+                        <div class="card-header">
+                          Users
+                        </div>
+                        <ul class="list-group list-group-flush" id="users">
+                        </ul>
+                    </div>
+                    <hr>
+                    <div class="card" style="overflow:auto; max-height: 40vh;">
+                        <div class="card-header">
+                          Rooms
+                        </div>
+                        <ul class="list-group list-group-flush" id="rooms">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <div>
-        <h2>Room: <span id="roomval">none</span></h2>
-        <h2>User: <span id="userval">none</span></h2>
-    </div>
 </body>
-
 
 <script>
     var exampleSocket = new WebSocket("wss://o89ag8rd5a.execute-api.eu-north-1.amazonaws.com/Prod");
     var roomId = ""
+    var roomName = ""
     var userId = ""
-
+    function login() {
+        userId = document.getElementById("username").value;
+        document.getElementById("login").style.display = "none";
+        document.getElementById("waiting").style.display = "block";
+        const msg = {
+            message: "login",
+            userId: userId
+        };
+        exampleSocket.send(JSON.stringify(msg));
+    }
+    
     function sendText() {
         const msg = {
             message: "sendmessage",
@@ -44,13 +115,20 @@
         exampleSocket.send(JSON.stringify(msg));
     }
 
-    function join() {
+    function join(user) {
         const msg = {
             message: "join",
-            roomId: document.getElementById("roomid").value,
-            userId: document.getElementById("userid").value
+            user1id: userId,
+            user2id: user
         };
         exampleSocket.send(JSON.stringify(msg));
+    }
+
+    function joinCustom(name, id) {
+        roomId = id;
+        roomName = name;
+        document.getElementById("chat").style.display = "block";
+        document.getElementById("roomName").innerText = roomName;
     }
     
     function hello() {
@@ -60,25 +138,99 @@
         exampleSocket.send(JSON.stringify(msg));
     }
 
+    function addRoom(){
+        let collection = document.getElementById("selectUsers").selectedOptions
+        let usersList = (Array.from(collection)).filter(opt => opt.innerText != "").map(opt => opt.innerText);
+        let newRoomName = document.getElementById("newRoomName").value;
+        const msg = {
+            message: "addroom",
+            userId: userId,
+            otherUsers: usersList,
+            roomName: newRoomName
+        };
+        exampleSocket.send(JSON.stringify(msg));
+    }
+
     exampleSocket.onopen = function(event) {
-        hello();
+        // hello();
     }
 
     exampleSocket.onmessage = function(event) {
         let response = JSON.parse(event.data);
         switch(response.messageType) {
             case 'JoinResponse':
-                roomId = response.roomId;
-                userId = response.userId
-                document.getElementById('roomval').innerHTML = roomId;
-                document.getElementById('userval').innerHTML = userId;
-                break;
+                console.log(response)
+                roomName = response.roomName
+                roomId = response.roomId
+                document.getElementById("chat").style.display = "block";
+                document.getElementById("roomName").innerText = roomName;
             case 'ChatMessageResponse':
-                var ul = document.getElementById("messages");
-                var li = document.createElement("li");
+                let ul = document.getElementById("messages");
+                let li = document.createElement("li");
                 li.appendChild(document.createTextNode(response.date + "  " + response.author + " : " + response.message ));
                 ul.appendChild(li);
                 break;
+            case 'LoginResponse':
+                if(response.success){
+                    document.getElementById("waiting").style.display = "none";
+                    document.getElementById("main_app").style.display = "block";
+                    let ul = document.getElementById("users");
+                    let select = document.getElementById("selectUsers")
+                    let filteredUsers = response.users.filter(u => u != userId)
+                    for (const user of filteredUsers){
+                        let li = document.createElement("button");
+                        // let inner = document.createElement('button');
+                        let inner = document.createTextNode(user)
+                        //inner.innerText = user
+                        li.appendChild(inner);
+                        li.addEventListener('click', event => join(user));
+                        li.classList.add('list-group-item');
+                        li.classList.add('list-group-item-action');
+                        ul.appendChild(li);
+                        //inner.addEventListener('click', event => join(user));
+
+
+                        let option = document.createElement("option")
+                        option.innerText = user
+                        select.appendChild(option)
+                    }
+                    $(".chosen-select").chosen()
+
+                    ul = document.getElementById("rooms");
+                    response.customRoomsNames.forEach((element, index) => {
+                        ///let li = document.createElement("button");
+                        let li = document.createElement('button');
+                        //inner.innerText = element
+                        let inner = document.createTextNode(element)
+                        li.appendChild(inner);
+                        li.addEventListener('click', event => joinCustom(element, response.customRoomsIds[index]));
+                        li.classList.add('list-group-item');
+                        li.classList.add('list-group-item-action');
+                        ul.appendChild(li);
+                    });
+                    console.log(response.users);
+                    console.log(response.customRoomsNames);
+                    console.log(response.customRoomsIds);
+                }
+                else{
+                    console.log("ERROR in LoginResponse")
+                }
+                break;
+            case 'AddRoomResponse':
+                if(response.success){
+                    let ul = document.getElementById("rooms");
+                    let li = document.createElement("li");
+                    let inner = document.createElement('button');
+                    inner.innerText = response.roomName
+                    li.appendChild(inner);
+                    ul.appendChild(li);
+                    inner.addEventListener('click', event => joinCustom(response.roomName, response.roomId));
+                }
+                else {
+                    console.log("ERROR: in addRoom")
+                }
+                break;
+
         }
     }
 
