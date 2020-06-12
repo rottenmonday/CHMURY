@@ -266,7 +266,6 @@ namespace AWSServerless1
                 var connectionId = request.RequestContext.ConnectionId;
                 context.Logger.LogLine($"API Gateway management endpoint: {endpoint}");
 
-                //// The body will look something like this: {"message":"sendmessage", "data":"What are you doing?"}
                 JsonDocument message = JsonDocument.Parse(request.Body);
 
                 // Grab the data from the JSON body which is the message to broadcasted.
@@ -285,18 +284,6 @@ namespace AWSServerless1
                 };
                 ChatMessageRequest messageRequest = JsonSerializer.Deserialize<ChatMessageRequest>(dataProperty.ToString(), options);
 
-                //var getItemRequest = new GetItemRequest
-                //{
-                //    TableName = ConnectionMappingTable,
-                //    Key = new Dictionary<string, AttributeValue>
-                //    {
-                //        {ConnectionIdField, new AttributeValue{ S = connectionId}}
-                //    },
-                //    ProjectionExpression = $"{RoomIdField}, {UserIdField}"
-                //};
-
-                //var resItem = await DDBClient.GetItemAsync(getItemRequest);
-
                 ChatMessageResponse chatMsg = new ChatMessageResponse
                 {
                     Message = messageRequest.Message,
@@ -304,17 +291,8 @@ namespace AWSServerless1
                     Author = messageRequest.UserID
                 };
 
-                //var data = dataProperty.GetString();
                 string data = JsonSerializer.Serialize(chatMsg);
                 var stream = new MemoryStream(UTF8Encoding.UTF8.GetBytes(data));
-
-                // List all of the current connections. In a more advanced use case the table could be used to grab a group of connection ids for a chat group.
-                //var scanRequest = new ScanRequest
-                //{
-                //    TableName = ConnectionMappingTable,
-                //    ProjectionExpression = ConnectionIdField,
-
-                //};
 
                 var queryRequest = new QueryRequest
                 {
