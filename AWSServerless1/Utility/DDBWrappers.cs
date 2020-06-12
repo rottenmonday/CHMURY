@@ -88,21 +88,34 @@ namespace AWSServerless1.Utility
             return (retNames, retIds);
         }
 
-        public async Task<string> AddCustomRoom(List<string> users, string roomName)
+        public async Task<string> AddCustomRoom(List<string> users, string roomName, string connectionId)
         {
             string roomId = Guid.NewGuid().ToString();
             var putRequest = new PutItemRequest
             {
                 TableName = _UsersRoomsTable,
                 Item = new Dictionary<string, AttributeValue>
-                    {
-                        { "NodeId", new AttributeValue { S = "room-" + roomId} },
-                        { "TargetId", new AttributeValue { S = "room-" + roomId} }
-                    }
+                {
+                    { "NodeId", new AttributeValue { S = "room-" + roomId} },
+                    { "TargetId", new AttributeValue { S = "room-" + roomId} }
+                }
             };
 
             await _DDBClient.PutItemAsync(putRequest);
-            foreach(var user in users)
+
+            putRequest = new PutItemRequest
+            {
+                TableName = _RoomsConnectionsTable,
+                Item = new Dictionary<string, AttributeValue>
+                {
+                    { "RoomId", new AttributeValue { S = "room-" + roomId } },
+                    { "ConnectionId", new AttributeValue { S = connectionId } }
+                }
+            };
+
+            await _DDBClient.PutItemAsync(putRequest);
+
+            foreach (var user in users)
             {
                 putRequest = new PutItemRequest
                 {

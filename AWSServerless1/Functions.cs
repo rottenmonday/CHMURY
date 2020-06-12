@@ -118,13 +118,14 @@ namespace AWSServerless1
         {
             try
             {
+                var connectionId = request.RequestContext.ConnectionId;
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
                 };
                 AddRoomRequest doc = JsonSerializer.Deserialize<AddRoomRequest>(request.Body, options);
                 doc.OtherUsers.Add(doc.UserId);
-                string roomId = await DDBUtils.AddCustomRoom(doc.OtherUsers, doc.RoomName);
+                string roomId = await DDBUtils.AddCustomRoom(doc.OtherUsers, doc.RoomName, connectionId);
                 AddRoomResponse responseMsg = new AddRoomResponse()
                 {
                     Success = true,
