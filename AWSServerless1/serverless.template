@@ -240,6 +240,13 @@
                 "Ref": "RoomsConnectionsTable"
               }
             }
+          },
+          {
+            "Statement": {
+              "Effect": "Allow",
+              "Action": "execute-api:ManageConnections",
+              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            }
           }
         ],
         "Environment": {

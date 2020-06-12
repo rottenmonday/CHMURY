@@ -318,11 +318,11 @@ namespace AWSServerless1
                 var queryRequest = new QueryRequest
                 {
                     TableName = RoomsConnectionsTable,
-                    KeyConditionExpression = "roomId = :ri",
+                    KeyConditionExpression = "RoomId = :ri",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue> {
                         {":ri", new AttributeValue { S =  messageRequest.RoomID }}
                      },
-                    ProjectionExpression = ConnectionIdField
+                    ProjectionExpression = "ConnectionId"
                 };
 
                 var queryResponse = await DDBClient.QueryAsync(queryRequest);
@@ -336,7 +336,7 @@ namespace AWSServerless1
                 {
                     var postConnectionRequest = new PostToConnectionRequest
                     {
-                        ConnectionId = item[ConnectionIdField].S,
+                        ConnectionId = item["ConnectionId"].S,
                         Data = stream
                     };
 
