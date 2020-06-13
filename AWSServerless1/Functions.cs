@@ -40,6 +40,7 @@ namespace AWSServerless1
         string RoomsConnectionsTable { get; }
         string UsersIndex { get; }
         string ConnectionsIndex { get;  }
+        string MessagesTable { get; }
         //string ConnectionsIndex { get; }
         DDBWrappers DDBUtils { get; set; }
 
@@ -67,6 +68,7 @@ namespace AWSServerless1
             RoomsConnectionsTable = System.Environment.GetEnvironmentVariable("ROOMS_CONNECTIONS_TABLE_NAME");
             UsersIndex = System.Environment.GetEnvironmentVariable("USERS_INDEX_NAME");
             ConnectionsIndex = System.Environment.GetEnvironmentVariable("CONNECTIONS_INDEX_NAME");
+            MessagesTable = System.Environment.GetEnvironmentVariable("MESSAGES_TABLE_NAME");
 
             this.ApiGatewayManagementApiClientFactory = (Func<string, AmazonApiGatewayManagementApiClient>)((endpoint) => 
             {
@@ -76,7 +78,7 @@ namespace AWSServerless1
                 });
             });
             DDBUtils = new DDBWrappers(DDBClient, ApiGatewayManagementApiClientFactory,
-                                        UsersRoomsTable, RoomsConnectionsTable, UsersIndex, ConnectionsIndex);
+                                        UsersRoomsTable, RoomsConnectionsTable, MessagesTable, UsersIndex, ConnectionsIndex);
         }
 
         /// <summary>

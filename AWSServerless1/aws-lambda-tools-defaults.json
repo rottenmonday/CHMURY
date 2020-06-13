@@ -6,13 +6,13 @@
         "dotnet lambda help",
         "All the command line options for the Lambda command can be specified in this file."
     ],
-    "profile"     : "default",
+    "profile"     : "krzysiu",
     "region"      : "eu-north-1",
     "configuration" : "Release",
     "framework"     : "netcoreapp3.1",
     "s3-prefix"     : "AWSServerless1/",
     "template"      : "serverless.template",
-    "template-parameters" : "\"UsersRoomsTableName\"=\"UsersRoomsTable\";\"RoomsConnectionsTableName\"=\"RoomsConnectionsTableT\";\"UsersIndexName\"=\"UsersId-index\";\"ConnectionsIndexName\"=\"ConnectionsId-index\"",
-    "s3-bucket"           : "test-bucket-cos",
+    "template-parameters" : "\"UsersRoomsTableName\"=\"UsersRoomsTable\";\"RoomsConnectionsTableName\"=\"RoomsConnectionsTableT\";\"MessageTableName\"=\"TescikMsgTable\";\"UsersIndexName\"=\"UsersId-index\";\"ConnectionsIndexName\"=\"ConnectionsId-index\"",
+    "s3-bucket"           : "test-site123",
     "stack-name"          : "chat-appka3"
 }

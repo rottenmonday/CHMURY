@@ -28,12 +28,14 @@ namespace AWSServerless1.Utility
         private Func<string, IAmazonApiGatewayManagementApi> _ApiGatewayManagementApiClientFactory { get; }
         private string _UsersRoomsTable { get; }
         private string _RoomsConnectionsTable { get; }
+        private string _MessagesTable { get; }
         private string _UsersIndex { get; set; }
         private string _ConnectionsIndex { get; set; }
         public DDBWrappers(IAmazonDynamoDB dDBClient,
                     Func<string, IAmazonApiGatewayManagementApi> apiGatewayManagementApiClientFactory,
                     string usersRoomsTable,
                     string roomsConnectionsTable,
+                    string messagesTable,
                     string usersIndex,
                     string connectionsIndex)
         {
@@ -41,6 +43,7 @@ namespace AWSServerless1.Utility
             _ApiGatewayManagementApiClientFactory = apiGatewayManagementApiClientFactory;
             _UsersRoomsTable = usersRoomsTable;
             _RoomsConnectionsTable = roomsConnectionsTable;
+            _MessagesTable = messagesTable;
             _UsersIndex = usersIndex;
             _ConnectionsIndex = connectionsIndex;
         }
