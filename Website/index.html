@@ -88,7 +88,7 @@
     var roomId = ""
     var roomName = ""
     var userId = ""
-    var roomDic = {} //Dictionary of roomName : roomId
+    var myDic = {} //Dictionary of roomName : roomId
     var oldestTimestamp = Number.MAX_SAFE_INTEGER
     document.getElementById("fname").addEventListener("keyup", function (event) {
         if (event.keyCode === 13) {
@@ -142,6 +142,8 @@
     }
 
     function joinCustom(name, id) {
+        document.getElementById("addroom").style.display = "none";
+        document.getElementById("chat").style.display = "block";
         if (id == roomId)
             return
         let ul = document.getElementById("messages");
