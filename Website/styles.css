@@ -1,6 +1,11 @@
 .chosen-container.chosen-container-multi {
     width: 300px !important; /* or any value that fits your needs */
 }
+
+.responsive {
+    max-width: 100%;
+    height: auto;
+}
 /* #mmenu_screen > .row {
     min-height: 100vh;
 }

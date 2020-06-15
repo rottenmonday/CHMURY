@@ -58,17 +58,18 @@
 
                 </div>
                 <div class="col">
-                    <div class="card" style="overflow:auto; max-height: 40vh;">
+                    <img src="chappka.png" alt="Chappka" class="responsive">
+                    <div class="card" style="overflow:auto; max-height: 35vh;">
                         <div class="card-header">
-                          Users
+                            Users
                         </div>
                         <ul class="list-group list-group-flush" id="users">
                         </ul>
                     </div>
                     <hr>
-                    <div class="card" style="overflow:auto; max-height: 40vh;">
+                    <div class="card" style="overflow:auto; max-height: 35vh;">
                         <div class="card-header">
-                          Rooms
+                            Rooms
                         </div>
                         <ul class="list-group list-group-flush" id="rooms">
                         </ul>
@@ -87,7 +88,7 @@
     var roomId = ""
     var roomName = ""
     var userId = ""
-    var roomDic = {} //Dictionary of roomName : roomId
+    var myDic = {} //Dictionary of roomName : roomId
     var oldestTimestamp = Number.MAX_SAFE_INTEGER
     document.getElementById("fname").addEventListener("keyup", function (event) {
         if (event.keyCode === 13) {
@@ -126,6 +127,8 @@
             }
         };
         document.getElementById("fname").value = ''
+        console.log("Sending text:")
+        console.log(msg)
         exampleSocket.send(JSON.stringify(msg));
     }
 
@@ -139,6 +142,8 @@
     }
 
     function joinCustom(name, id) {
+        document.getElementById("addroom").style.display = "none";
+        document.getElementById("chat").style.display = "block";
         if (id == roomId)
             return
         let ul = document.getElementById("messages");
