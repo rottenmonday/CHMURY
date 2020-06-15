@@ -29,8 +29,9 @@
                         <label for="fname">Send message:</label>
                         <input type="text" id="fname" name="fname"><br><br>
                         <button onclick="sendText()" id="sendButton">Send!</button><br>
+                        <button onclick="loadMore()" id="loadMoreButton" style="display: none">Load previous messages</button><br>
+                        <span id="noMoreMessages" style="display: none">No more messages</span><br>
                         <ul id="messages">
-                            
                         </ul>
                     </div>
 
@@ -77,6 +78,7 @@
     var roomName = ""
     var userId = ""
     var roomDic = {} //Dictionary of roomName : roomId
+    var oldestTimestamp = Number.MAX_SAFE_INTEGER
     document.getElementById("fname").addEventListener("keyup", function (event) {
         if (event.keyCode === 13) {
             event.preventDefault();
@@ -103,6 +105,8 @@
     }
     
     function sendText() {
+        if (document.getElementById("fname").value == "")
+            return;
         const msg = {
             message: "sendmessage",
             data: {
@@ -133,7 +137,22 @@
         roomName = name;
         document.getElementById("chat").style.display = "block";
         document.getElementById("roomName").innerText = roomName;
-        console.log("Zmiana pokoju")
+        console.log("Zmiana pokoju");
+        oldestTimestamp = Number.MAX_SAFE_INTEGER
+        document.getElementById("noMoreMessages").style.display = "none";
+        document.getElementById("loadMoreButton").style.display = "block";
+        loadMore();
+    }
+
+    function loadMore() {
+        const msg = {
+            message: "getmessages",
+            roomId: roomId,
+            timeStamp: String(oldestTimestamp)
+        };
+        console.log("Sending message:");
+        console.log(msg);
+        exampleSocket.send(JSON.stringify(msg));
     }
     
     function hello() {
@@ -166,7 +185,8 @@
         // hello();
     }
 
-    exampleSocket.onmessage = function(event) {
+    exampleSocket.onmessage = function (event) {
+        console.log("Wiadomosc")
         let response = JSON.parse(event.data);
         console.log(response)
         switch(response.messageType) {
@@ -240,6 +260,25 @@
                 }
                 else {
                     console.log("ERROR: in addRoom")
+                }
+                break;
+            case 'GetMessagesResponse':
+                if (response.success) {
+                    let ul = document.getElementById("messages");
+                    for (i = 0; i < response.dates.length; i++) {
+                        let li = document.createElement("li");
+                        msg = new Date(response.dates[i] * 1000).toLocaleString() + " " + response.users[i] + " : " + response.messages[i]
+                        li.appendChild(document.createTextNode(msg));
+                        ul.insertBefore(li, ul.childNodes[0]);
+                    }
+                    document.getElementById("loadMoreButton").style.display = "block";
+                    oldestTimestamp = response.dates[response.dates.length - 1]
+                }
+                if (!response.success || response.dates.length < 5) {
+                    console.log("No more messages")
+                    noMoreMessages
+                    document.getElementById("noMoreMessages").style.display = "block";
+                    document.getElementById("loadMoreButton").style.display = "none";
                 }
                 break;
 

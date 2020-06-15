@@ -12,7 +12,7 @@
     "framework"     : "netcoreapp3.1",
     "s3-prefix"     : "AWSServerless1/",
     "template"      : "serverless.template",
-    "template-parameters" : "\"UsersRoomsTableName\"=\"UsersRoomsTable\";\"RoomsConnectionsTableName\"=\"RoomsConnectionsTableT\";\"MessageTableName\"=\"TescikMsgTable\";\"UsersIndexName\"=\"UsersId-index\";\"ConnectionsIndexName\"=\"ConnectionsId-index\"",
+    "template-parameters" : "\"UsersRoomsTableName\"=\"UsersRoomsTable\";\"RoomsConnectionsTableName\"=\"RoomsConnectionsTableT\";\"MessageTableName\"=\"TescikMsgTableGamma\";\"UsersIndexName\"=\"UsersId-index\";\"ConnectionsIndexName\"=\"ConnectionsId-index\"",
     "s3-bucket"           : "test-site123",
     "stack-name"          : "chat-appka3"
 }

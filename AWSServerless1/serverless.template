@@ -139,7 +139,7 @@
             "BillingMode": "PAY_PER_REQUEST"
         }
     },
-    "MessageRoomsTable": {
+    "MessagesTable": {
       "Type": "AWS::DynamoDB::Table",
       "Properties": {
             "TableName": {
@@ -151,8 +151,8 @@
                     "AttributeType": "S"
                 },
                 {
-                    "AttributeName": "Date",
-                    "AttributeType": "S"
+                    "AttributeName": "DateId",
+                    "AttributeType": "N"
                 }
             ],
             "KeySchema": [
@@ -161,7 +161,7 @@
                 "KeyType": "HASH"
                 },
                 {
-                "AttributeName": "Date",
+                "AttributeName": "DateId",
                 "KeyType": "RANGE"
                 }
             ],
@@ -284,7 +284,67 @@
           {
             "DynamoDBCrudPolicy": {
               "TableName": {
-                "Ref": "MessageRoomsTable"
+                "Ref": "MessagesTable"
+              }
+            }
+          },
+          {
+            "Statement": {
+              "Effect": "Allow",
+              "Action": "execute-api:ManageConnections",
+              "Resource": "arn:aws:execute-api:*:*:*/@connections/*"
+            }
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "USERS_ROOMS_TABLE_NAME": {
+              "Ref": "UsersRoomsTableName"
+            },
+            "ROOMS_CONNECTIONS_TABLE_NAME": {
+              "Ref": "RoomsConnectionsTableName"
+            },
+            "MESSAGES_TABLE_NAME": {
+              "Ref": "MessageTableName"
+            },
+            "USERS_INDEX_NAME": {
+              "Ref": "UsersIndexName"
+            },
+            "CONNECTIONS_INDEX_NAME": {
+              "Ref": "ConnectionsIndexName"
+            }
+          }
+        }
+      }
+    },
+    "GetMessagesFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "AWSServerless1::AWSServerless1.Functions::GetMessagesHandler",
+        "Runtime": "dotnetcore3.1",
+        "CodeUri": "",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "UsersRoomsTable"
+              }
+            }
+          },
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "RoomsConnectionsTable"
+              }
+            }
+          },
+          {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "MessagesTable"
               }
             }
           },
@@ -681,6 +741,77 @@
         }
       }
     },
+    "GetMessagesRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "RouteKey": "getmessages",
+        "AuthorizationType": "NONE",
+        "OperationName": "ConnectRoute",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "GetMessagesInteg"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "GetMessagesInteg": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "SimpleChatWebSocketApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Sub": [
+            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
+            {
+              "region": {
+                "Ref": "AWS::Region"
+              },
+              "function": {
+                "Fn::GetAtt": [
+                  "GetMessagesFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "GetMessagesResponseInteg": {
+        "Type":"AWS::ApiGatewayV2::IntegrationResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "IntegrationId": {
+                "Ref": "GetMessagesInteg"
+            },
+            "IntegrationResponseKey": "$default"
+        }
+    },
+    "GetMessagesResponseRoute": {
+        "Type":"AWS::ApiGatewayV2::RouteResponse",
+        "Properties": {
+            "ApiId": {
+                "Ref": "SimpleChatWebSocketApi"
+            },
+            "RouteId": {
+                "Ref": "GetMessagesRoute"
+            },
+            "RouteResponseKey": "$default"
+        }
+    },
     "JoinRoute": {
       "Type": "AWS::ApiGatewayV2::Route",
       "Properties": {
@@ -998,7 +1129,8 @@
         "ByeRoute",
         "JoinRoute",
         "LoginRoute",
-        "AddRoomRoute"
+        "AddRoomRoute",
+        "GetMessagesRoute"
       ],
       "Properties": {
         "ApiId": {
@@ -1056,6 +1188,20 @@
         "Action": "lambda:InvokeFunction",
         "FunctionName": {
           "Ref": "SendMessageFunction"
+        },
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "GetMessagesPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "GetMessagesFunction",
+        "SimpleChatWebSocketApi"
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "GetMessagesFunction"
         },
         "Principal": "apigateway.amazonaws.com"
       }

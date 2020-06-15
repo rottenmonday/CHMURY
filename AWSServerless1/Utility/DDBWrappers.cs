@@ -19,6 +19,8 @@ using Amazon.ApiGatewayManagementApi.Model;
 
 using AWSServerless1.Models.OutMessages;
 using AWSServerless1.Models.InMessages;
+using System.Runtime.CompilerServices;
+using Amazon.DynamoDBv2.DocumentModel;
 
 namespace AWSServerless1.Utility
 {
@@ -31,6 +33,7 @@ namespace AWSServerless1.Utility
         private string _MessagesTable { get; }
         private string _UsersIndex { get; set; }
         private string _ConnectionsIndex { get; set; }
+        
         public DDBWrappers(IAmazonDynamoDB dDBClient,
                     Func<string, IAmazonApiGatewayManagementApi> apiGatewayManagementApiClientFactory,
                     string usersRoomsTable,
@@ -194,7 +197,7 @@ namespace AWSServerless1.Utility
                     }
                 };
                 await _DDBClient.PutItemAsync(putRequest);
-                return roomId;
+                return $"room-{roomId}";
             }
         }
 
@@ -276,8 +279,8 @@ namespace AWSServerless1.Utility
                 TableName = _MessagesTable,
                 Item = new Dictionary<string, AttributeValue>
                 {
-                    { "RoomId", new AttributeValue { S = $"room-{roomId}"} },
-                    { "Date", new AttributeValue { S = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds.ToString()} },
+                    { "RoomId", new AttributeValue { S = $"{roomId}"} },
+                    { "DateId", new AttributeValue { N = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds.ToString()} },
                     { "UserId", new AttributeValue { S = user} },
                     { "Message", new AttributeValue { S = message} }
 
@@ -285,5 +288,44 @@ namespace AWSServerless1.Utility
             };
             await _DDBClient.PutItemAsync(putRequest);
         }
+
+        /// <summary>
+        /// Gets messages from the given room before the given timeStamp.
+        /// </summary>
+        /// <param name="roomId"></param>
+        /// <param name="timeStamp"></param>
+        /// <returns></returns>
+        public async Task<Messsages> GetMessages(string roomId, string timeStamp, int limit)
+        {
+            var queryRequest = new QueryRequest
+            {
+                TableName = _MessagesTable,
+                KeyConditionExpression = $"RoomId = :partitionkeyval AND DateId < :dateval",
+                ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                {
+                    {":partitionkeyval", new AttributeValue { S = $"{roomId}"} },
+                    {":dateval", new AttributeValue { N = timeStamp } }
+                },
+                ProjectionExpression = "Message, DateId, UserId",
+                ScanIndexForward = false,
+                Limit = limit
+            };
+            Messsages retMessages = new Messsages()
+            {
+                Dates = new List<string>(),
+                Messages = new List<string>(),
+                UserNames = new List<string>()
+            };
+            var queryResponse = await _DDBClient.QueryAsync(queryRequest);
+            foreach (var item in queryResponse.Items)
+            {
+                retMessages.Messages.Add(item["Message"].S);
+                retMessages.UserNames.Add(item["UserId"].S);
+                retMessages.Dates.Add(item["DateId"].N);
+            }
+            return retMessages;
+        }
+
+        
     }
 }

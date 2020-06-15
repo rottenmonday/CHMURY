@@ -32,6 +32,10 @@ namespace AWSServerless1
         public const string RoomIdField = "roomId";
         public const string UserIdField = "userId";
         public const string TempRoomName = "Purgatory";
+        /// <summary>
+        /// Number of previous message to load at a time
+        /// </summary>
+        public const int MessageLoadingLimit = 5;
 
         /// <summary>
         /// DynamoDB table used to store the open connection ids. More advanced use cases could store logged on user map to their connection id to implement direct message chatting.
@@ -240,7 +244,6 @@ namespace AWSServerless1
                     Body = JsonSerializer.Serialize(responseMsg)
                 };
             }
-
             catch (Exception e)
             {
                 context.Logger.LogLine("Error logging in: " + e.Message);
@@ -371,6 +374,51 @@ namespace AWSServerless1
                 {
                     StatusCode = (int)HttpStatusCode.InternalServerError,
                     Body = $"Failed to send message: {e.Message}"
+                };
+            }
+        }
+
+        public async Task<APIGatewayProxyResponse> GetMessagesHandler(APIGatewayProxyRequest request, ILambdaContext context)
+        {
+            
+            try
+            {
+                var connectionId = request.RequestContext.ConnectionId;
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                };
+                GetMessagesRequest getMessagesRequest = JsonSerializer.Deserialize<GetMessagesRequest>(request.Body, options);
+
+                var queryResponse = await DDBUtils.GetMessages(getMessagesRequest.RoomID, 
+                                                               getMessagesRequest.TimeStamp,
+                                                               MessageLoadingLimit);
+                GetMessagesResponse getMessagesResponse = new GetMessagesResponse()
+                {
+                    Messages = queryResponse.Messages,
+                    Dates = queryResponse.Dates,
+                    Users = queryResponse.UserNames,
+                    Success = true
+                };
+
+                return new APIGatewayProxyResponse
+                {
+                    StatusCode = (int)HttpStatusCode.OK,
+                    Body = JsonSerializer.Serialize(getMessagesResponse)
+                };
+            }
+            catch (Exception e)
+            {
+                context.Logger.LogLine("Error logging in: " + e.Message);
+                context.Logger.LogLine(e.StackTrace);
+                GetMessagesResponse responseMsg = new GetMessagesResponse()
+                {
+                    Success = false
+                };
+                return new APIGatewayProxyResponse
+                {
+                    StatusCode = (int)HttpStatusCode.InternalServerError,
+                    Body = JsonSerializer.Serialize(responseMsg)
                 };
             }
         }

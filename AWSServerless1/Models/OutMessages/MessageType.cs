@@ -11,6 +11,7 @@ namespace AWSServerless1.Models.OutMessages
         JoinResponse,
         ChatMessageResponse,
         LoginResponse,
-        AddRoomResponse
+        AddRoomResponse,
+        GetMessagesResponse
     }
 }
