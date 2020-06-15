@@ -165,7 +165,7 @@ namespace AWSServerless1
             }
             catch (Exception e)
             {
-                context.Logger.LogLine("Error connecting: " + e.Message);
+                context.Logger.LogLine("Error joining room: " + e.Message);
                 context.Logger.LogLine(e.StackTrace);
                 JoinResponse responseMsg = new JoinResponse()
                 {
@@ -345,7 +345,7 @@ namespace AWSServerless1
             }
             catch (Exception e)
             {
-                context.Logger.LogLine("Error disconnecting: " + e.Message);
+                context.Logger.LogLine("Error sending message: " + e.Message);
                 context.Logger.LogLine(e.StackTrace);
                 return new APIGatewayProxyResponse
                 {
@@ -396,65 +396,6 @@ namespace AWSServerless1
                 {
                     StatusCode = (int)HttpStatusCode.InternalServerError,
                     Body = JsonSerializer.Serialize(responseMsg)
-                };
-            }
-        }
-
-        public async Task<APIGatewayProxyResponse> HelloHandler(APIGatewayProxyRequest request, ILambdaContext context)
-        {
-            try
-            {
-                var connectionId = request.RequestContext.ConnectionId;
-                // Construct the API Gateway endpoint that incoming message will be broadcasted to.
-                var domainName = request.RequestContext.DomainName;
-                var stage = request.RequestContext.Stage;
-                var endpoint = $"https://{domainName}/{stage}";
-                var apiClient = ApiGatewayManagementApiClientFactory(endpoint);
-                string message = $"Hello, {connectionId}! Here's a date for you: {DateTime.Now.ToShortDateString()}";
-                MemoryStream stream = new MemoryStream(UTF8Encoding.UTF8.GetBytes(message));
-                PostToConnectionRequest postConnectionRequest = new PostToConnectionRequest
-                {
-                    ConnectionId = connectionId,
-                    Data = stream
-                };
-                stream.Position = 0;
-                await apiClient.PostToConnectionAsync(postConnectionRequest);
-                return new APIGatewayProxyResponse
-                {
-                    StatusCode = 200,
-                    Body = $"Successfully sent Hello message!"
-                };
-            }
-            catch (Exception e)
-            {
-                context.Logger.LogLine("Error sending hello: " + e.Message);
-                context.Logger.LogLine(e.StackTrace);
-                return new APIGatewayProxyResponse
-                {
-                    StatusCode = 500,
-                    Body = $"Failed to send message: {e.Message}"
-                };
-            }
-        }
-
-        public async Task<APIGatewayProxyResponse> ByeHandler(APIGatewayProxyRequest request, ILambdaContext context)
-        {
-            try
-            {
-                return new APIGatewayProxyResponse
-                {
-                    StatusCode = 200,
-                    Body = $"Hello, ! Date for you is: NONE."
-                };
-            }
-            catch (Exception e)
-            {
-                context.Logger.LogLine("Error sending hello: " + e.Message);
-                context.Logger.LogLine(e.StackTrace);
-                return new APIGatewayProxyResponse
-                {
-                    StatusCode = 500,
-                    Body = $"Failed to send message: {e.Message}"
                 };
             }
         }
