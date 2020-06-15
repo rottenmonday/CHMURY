@@ -310,7 +310,7 @@ namespace AWSServerless1
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue> {
                         {":ri", new AttributeValue { S =  messageRequest.RoomID }}
                      },
-                    ProjectionExpression = "ConnectionId"
+                    ProjectionExpression = "RoomId, ConnectionId"
                 };
 
                 var queryResponse = await DDBClient.QueryAsync(queryRequest);
@@ -347,7 +347,8 @@ namespace AWSServerless1
                                 TableName = RoomsConnectionsTable,
                                 Key = new Dictionary<string, AttributeValue>
                                 {
-                                    {ConnectionIdField, new AttributeValue {S = postConnectionRequest.ConnectionId}}
+                                    {"RoomId", new AttributeValue {S = item["RoomId"].S } },
+                                    {"ConnectionId", new AttributeValue {S = postConnectionRequest.ConnectionId}}
                                 }
                             };
 
