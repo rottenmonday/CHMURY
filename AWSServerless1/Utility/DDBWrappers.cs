@@ -139,7 +139,7 @@ namespace AWSServerless1.Utility
             return roomId;
         }
 
-        public async Task<string> GenerateNormalRoom(string user1Id, string user2Id)
+        public async Task<string> GenerateNormalRoom(string user1Id, string user2Id, string connectionId)
         {
             var queryRequest = new QueryRequest
             {
@@ -196,7 +196,21 @@ namespace AWSServerless1.Utility
                         { "Interlocutor", new AttributeValue { S = user1Id } }
                     }
                 };
+
                 await _DDBClient.PutItemAsync(putRequest);
+
+                putRequest = new PutItemRequest
+                {
+                    TableName = _RoomsConnectionsTable,
+                    Item = new Dictionary<string, AttributeValue>
+                    {
+                        { "RoomId", new AttributeValue { S = "room-" + roomId} },
+                        { "ConnectionId", new AttributeValue { S = connectionId } }
+                    }
+                };
+
+                await _DDBClient.PutItemAsync(putRequest);
+
                 return $"room-{roomId}";
             }
         }
