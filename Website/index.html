@@ -126,6 +126,8 @@
             }
         };
         document.getElementById("fname").value = ''
+        console.log("Sending text:")
+        console.log(msg)
         exampleSocket.send(JSON.stringify(msg));
     }
 
