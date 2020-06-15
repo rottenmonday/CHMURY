@@ -954,7 +954,6 @@
         "Principal": "apigateway.amazonaws.com"
       }
     },
-
     
     "SendMessageFunction": {
       "Type": "AWS::Serverless::Function",

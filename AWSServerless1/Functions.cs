@@ -386,7 +386,7 @@ namespace AWSServerless1
             }
             catch (Exception e)
             {
-                context.Logger.LogLine("Error logging in: " + e.Message);
+                context.Logger.LogLine("Error getting messages: " + e.Message);
                 context.Logger.LogLine(e.StackTrace);
                 GetMessagesResponse responseMsg = new GetMessagesResponse()
                 {

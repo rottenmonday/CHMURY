@@ -336,12 +336,13 @@ namespace AWSServerless1.Utility
         }
 
         /// <summary>
-        /// Gets messages from the given room before the given timeStamp.
+        /// Gets limit messages from the given room before the given timeStamp.
         /// </summary>
-        /// <param name="roomId"></param>
+        /// <param name="roomId">The room id</param>
         /// <param name="timeStamp"></param>
+        /// <param name="limit"></param>
         /// <returns></returns>
-        public async Task<Messsages> GetMessages(string roomId, string timeStamp, int limit)
+        public async Task<Messsages> GetMessages(string roomId, string timeStamp, int limit = 5)
         {
             var queryRequest = new QueryRequest
             {
