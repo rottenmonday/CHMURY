@@ -17,20 +17,29 @@
           <button type="submit" class="btn btn-primary" onclick="login()" id="loginButton">Login!</button>
     </div>
     <div id="waiting" style="display: none">
-        <h3>Logging in...</h3>
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <strong>Loading...</strong>
     </div>
     <div id="main_app" style="display: none">
         <div class="container-fluid">
             <div class="row" style="min-height: 95vh;">
                 <div class="col-10" style="border-right: 1px dashed black; border-bottom: 1px dashed black;">
-
+                    
                     <div id="chat" style="display: none">
                         <h1 id="roomName"></h1>
                         <label for="fname">Send message:</label>
                         <input type="text" id="fname" name="fname"><br><br>
-                        <button onclick="sendText()" id="sendButton">Send!</button><br>
-                        <button onclick="loadMore()" id="loadMoreButton" style="display: none">Load previous messages</button><br>
+                        <button onclick="sendText()" id="sendButton" class="btn btn-success">Send!</button><br>
+                        <button onclick="loadMore()" id="loadMoreButton" style="display: none" class="btn btn-secondary">Load previous messages</button><br>
                         <span id="noMoreMessages" style="display: none">No more messages</span><br>
+                        <div id="loadingMessagesSpinner" style="display: none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only ">Loading...</span>
+                            </div>
+                            <strong class="text-primary">Loading...</strong>
+                        </div>
                         <ul id="messages">
                         </ul>
                     </div>
@@ -45,6 +54,7 @@
                         <input type="text" id="newRoomName" name="newRoomName"><br><br>
                         <button onclick="addRoom()">Add!</button>
                     </div>
+
 
                 </div>
                 <div class="col">
@@ -142,9 +152,13 @@
         document.getElementById("noMoreMessages").style.display = "none";
         document.getElementById("loadMoreButton").style.display = "block";
         loadMore();
+        s = document.getElementById(roomId).firstElementChild;
+        s.style.display = "none"
+        s.innerHTML = "0"
     }
 
     function loadMore() {
+        document.getElementById("loadingMessagesSpinner").style.display = "block";
         const msg = {
             message: "getmessages",
             roomId: roomId,
@@ -192,13 +206,19 @@
         switch(response.messageType) {
             case 'JoinResponse':
                 joinCustom(response.roomName, response.roomId)
-                break;
+                break
             case 'ChatMessageResponse':
                 if (roomId == response.roomId) {
                     let ul = document.getElementById("messages");
                     let li = document.createElement("li");
                     li.appendChild(document.createTextNode(new Date(response.date * 1000).toLocaleString() + "  " + response.author + " : " + response.message));
                     ul.appendChild(li);
+                }
+                else {
+                    s = document.getElementById(response.roomId).firstElementChild;
+                    s.style.display = "inline"
+                    s.innerHTML = String(Number(s.innerHTML) + 1)
+
                 }
                 break;
             case 'LoginResponse':
@@ -215,6 +235,9 @@
                         li.addEventListener('click', event => join(user));
                         li.classList.add('list-group-item');
                         li.classList.add('list-group-item-action');
+
+                       
+
                         ul.appendChild(li);
 
 
@@ -232,7 +255,14 @@
                         li.addEventListener('click', event => joinCustom(element, response.customRoomsIds[index]));
                         li.classList.add('list-group-item');
                         li.classList.add('list-group-item-action');
+                        li.id = response.customRoomsIds[index]
                         ul.appendChild(li);
+                        var s = document.createElement('span');
+                        s.classList.add("badge")
+                        s.classList.add("badge-primary")
+                        s.innerHTML = "0"
+                        s.style.display = "none"
+                        li.appendChild(s)
                     });
                     for (i = 0; i < response.customRoomsNames.length; i++) {
                         roomDic[response.customRoomsNames[i]] = response.customRoomsIds[i]
@@ -278,6 +308,8 @@
                     document.getElementById("noMoreMessages").style.display = "block";
                     document.getElementById("loadMoreButton").style.display = "none";
                 }
+
+                document.getElementById("loadingMessagesSpinner").style.display = "none";
                 break;
 
         }
