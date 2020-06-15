@@ -132,6 +132,7 @@ namespace AWSServerless1
                 AddRoomRequest doc = JsonSerializer.Deserialize<AddRoomRequest>(request.Body, options);
                 doc.OtherUsers.Add(doc.UserId);
                 string roomId = await DDBUtils.AddCustomRoom(doc.OtherUsers, doc.RoomName, connectionId);
+                roomId = "room-" + roomId;
                 AddRoomResponse responseMsg = new AddRoomResponse()
                 {
                     Success = true,
@@ -288,11 +289,11 @@ namespace AWSServerless1
                     PropertyNameCaseInsensitive = true,
                 };
                 ChatMessageRequest messageRequest = JsonSerializer.Deserialize<ChatMessageRequest>(dataProperty.ToString(), options);
-
                 string date = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds.ToString();
                 await DDBUtils.PutMessage(messageRequest.Message, messageRequest.RoomID, messageRequest.UserID, date);
                 ChatMessageResponse chatMsg = new ChatMessageResponse
                 {
+                    Success = true,
                     Message = messageRequest.Message,
                     Date = date,
                     Author = messageRequest.UserID,

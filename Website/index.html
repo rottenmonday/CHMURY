@@ -206,11 +206,9 @@
         switch(response.messageType) {
             case 'JoinResponse':
                 joinCustom(response.roomName, response.roomId)
-                //document.getElementById("chat").style.display = "block";
-                //document.getElementById("roomName").innerText = roomName;
                 break
             case 'ChatMessageResponse':
-                if (roomDic[roomName] == response.roomId) {
+                if (roomId == response.roomId) {
                     let ul = document.getElementById("messages");
                     let li = document.createElement("li");
                     li.appendChild(document.createTextNode(new Date(response.date * 1000).toLocaleString() + "  " + response.author + " : " + response.message));
