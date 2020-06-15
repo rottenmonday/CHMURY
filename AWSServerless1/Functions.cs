@@ -174,7 +174,7 @@ namespace AWSServerless1
                 };
                 JoinRequest doc = JsonSerializer.Deserialize<JoinRequest>(request.Body, options);
 
-                string roomId = await DDBUtils.GenerateNormalRoom(doc.User1ID, doc.User2ID);
+                string roomId = await DDBUtils.GenerateNormalRoom(doc.User1ID, doc.User2ID, connectionId);
 
                 JoinResponse responseMsg = new JoinResponse()
                 {
