@@ -260,5 +260,30 @@ namespace AWSServerless1.Utility
                 await _DDBClient.DeleteItemAsync(ddbRequest);
             }
         }
+
+        /// <summary>
+        /// Adds a record to the DynamoDBB MessagesTable containing the message, the room id, 
+        /// the user id and the date measured in a UNIX Epoch time system.
+        /// </summary>
+        /// <param name="message">The message</param>
+        /// <param name="roomId">The room in which the message was sent</param>
+        /// <param name="user">Author of the message</param>
+        /// <returns></returns>
+        public async Task PutMessage(string message, string roomId, string user)
+        {
+            var putRequest = new PutItemRequest
+            {
+                TableName = _MessagesTable,
+                Item = new Dictionary<string, AttributeValue>
+                {
+                    { "RoomId", new AttributeValue { S = $"room-{roomId}"} },
+                    { "Date", new AttributeValue { S = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds.ToString()} },
+                    { "UserId", new AttributeValue { S = user} },
+                    { "Message", new AttributeValue { S = message} }
+
+                }
+            };
+            await _DDBClient.PutItemAsync(putRequest);
+        }
     }
 }

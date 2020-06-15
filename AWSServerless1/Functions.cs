@@ -286,11 +286,13 @@ namespace AWSServerless1
                 };
                 ChatMessageRequest messageRequest = JsonSerializer.Deserialize<ChatMessageRequest>(dataProperty.ToString(), options);
 
+                await DDBUtils.PutMessage(messageRequest.Message, messageRequest.RoomID, messageRequest.UserID);
                 ChatMessageResponse chatMsg = new ChatMessageResponse
                 {
                     Message = messageRequest.Message,
                     Date = DateTime.UtcNow.ToShortTimeString(),
-                    Author = messageRequest.UserID
+                    Author = messageRequest.UserID,
+                    RoomId = messageRequest.RoomID
                 };
 
                 string data = JsonSerializer.Serialize(chatMsg);

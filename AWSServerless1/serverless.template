@@ -282,6 +282,13 @@
             }
           },
           {
+            "DynamoDBCrudPolicy": {
+              "TableName": {
+                "Ref": "MessageRoomsTable"
+              }
+            }
+          },
+          {
             "Statement": {
               "Effect": "Allow",
               "Action": "execute-api:ManageConnections",
@@ -296,6 +303,9 @@
             },
             "ROOMS_CONNECTIONS_TABLE_NAME": {
               "Ref": "RoomsConnectionsTableName"
+            },
+            "MESSAGES_TABLE_NAME": {
+              "Ref": "MessageTableName"
             },
             "USERS_INDEX_NAME": {
               "Ref": "UsersIndexName"

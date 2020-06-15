@@ -14,10 +14,10 @@
             <label for="username">Username:</label>
             <input type="text" class="form-control" id="username" placeholder="Enter username">
           </div>
-          <button type="submit" class="btn btn-primary" onclick="login()">Login!</button>
+          <button type="submit" class="btn btn-primary" onclick="login()" id="loginButton">Login!</button>
     </div>
     <div id="waiting" style="display: none">
-        <h3>Waiting...</h3>
+        <h3>Logging in...</h3>
     </div>
     <div id="main_app" style="display: none">
         <div class="container-fluid">
@@ -28,7 +28,7 @@
                         <h1 id="roomName"></h1>
                         <label for="fname">Send message:</label>
                         <input type="text" id="fname" name="fname"><br><br>
-                        <button onclick="sendText()">Send!</button><br>
+                        <button onclick="sendText()" id="sendButton">Send!</button><br>
                         <ul id="messages">
                             
                         </ul>
@@ -76,6 +76,21 @@
     var roomId = ""
     var roomName = ""
     var userId = ""
+    var roomDic = {} //Dictionary of roomName : roomId
+    document.getElementById("fname").addEventListener("keyup", function (event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("sendButton").click();
+        }
+    })
+
+    document.getElementById("username").addEventListener("keyup", function (event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("loginButton").click();
+        }
+    })
+
     function login() {
         userId = document.getElementById("username").value;
         document.getElementById("login").style.display = "none";
@@ -96,6 +111,7 @@
                 message: document.getElementById("fname").value
             }
         };
+        document.getElementById("fname").value = ''
         exampleSocket.send(JSON.stringify(msg));
     }
 
@@ -109,10 +125,15 @@
     }
 
     function joinCustom(name, id) {
+        if (id == roomId)
+            return
+        let ul = document.getElementById("messages");
+        ul.innerHTML = ''
         roomId = id;
         roomName = name;
         document.getElementById("chat").style.display = "block";
         document.getElementById("roomName").innerText = roomName;
+        console.log("Zmiana pokoju")
     }
     
     function hello() {
@@ -130,7 +151,7 @@
         const msg = {
             message: "addroom",
             userId: userId,
-            otherUsers: usersList,
+            otherUsers: usersList,  
             roomName: newRoomName
         };
         exampleSocket.send(JSON.stringify(msg));
@@ -147,18 +168,20 @@
 
     exampleSocket.onmessage = function(event) {
         let response = JSON.parse(event.data);
+        console.log(response)
         switch(response.messageType) {
             case 'JoinResponse':
-                console.log(response)
                 roomName = response.roomName
                 roomId = response.roomId
                 document.getElementById("chat").style.display = "block";
                 document.getElementById("roomName").innerText = roomName;
             case 'ChatMessageResponse':
-                let ul = document.getElementById("messages");
-                let li = document.createElement("li");
-                li.appendChild(document.createTextNode(response.date + "  " + response.author + " : " + response.message ));
-                ul.appendChild(li);
+                if (roomDic[roomName] == response.roomId) {
+                    let ul = document.getElementById("messages");
+                    let li = document.createElement("li");
+                    li.appendChild(document.createTextNode(response.date + "  " + response.author + " : " + response.message));
+                    ul.appendChild(li);
+                }
                 break;
             case 'LoginResponse':
                 if(response.success){
@@ -193,6 +216,9 @@
                         li.classList.add('list-group-item-action');
                         ul.appendChild(li);
                     });
+                    for (i = 0; i < response.customRoomsNames.length; i++) {
+                        roomDic[response.customRoomsNames[i]] = response.customRoomsIds[i]
+                    }
                     console.log(response.users);
                     console.log(response.customRoomsNames);
                     console.log(response.customRoomsIds);
