@@ -157,7 +157,39 @@ namespace AWSServerless1.Utility
                 ProjectionExpression = "TargetId"
             };
             var queryResponse = await _DDBClient.QueryAsync(queryRequest);
-            if (queryResponse.Count != 0) return queryResponse.Items[0]["TargetId"].S;
+            if (queryResponse.Count != 0)
+            {
+                var roomId = queryResponse.Items[0]["TargetId"].S;
+                queryRequest = new QueryRequest
+                {
+                    TableName = _RoomsConnectionsTable,
+                    KeyConditionExpression = $"RoomId = :partitionkeyval AND ConnectionId = :sortkeyval",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        {":partitionkeyval", new AttributeValue { S = roomId } },
+                        {":sortkeyval", new AttributeValue { S = connectionId } }
+                    },
+                    ProjectionExpression = "RoomId"
+                };
+                queryResponse = await _DDBClient.QueryAsync(queryRequest);
+                if (queryResponse.Count != 0) return roomId;
+                else
+                {
+                    var putRequest = new PutItemRequest
+                    {
+                        TableName = _RoomsConnectionsTable,
+                        Item = new Dictionary<string, AttributeValue>
+                        {
+                            { "RoomId", new AttributeValue { S = roomId} },
+                            { "ConnectionId", new AttributeValue { S = connectionId } }
+                        }
+                    };
+
+                    await _DDBClient.PutItemAsync(putRequest);
+                    return roomId;
+                }
+            }
+                
             else
             {
                 string roomId = Guid.NewGuid().ToString();

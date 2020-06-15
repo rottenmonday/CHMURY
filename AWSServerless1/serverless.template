@@ -377,92 +377,6 @@
         }
       }
     },
-    "HelloFunction": {
-      "Type": "AWS::Serverless::Function",
-      "Properties": {
-        "Handler": "AWSServerless1::AWSServerless1.Functions::HelloHandler",
-        "Runtime": "dotnetcore3.1",
-        "CodeUri": "",
-        "MemorySize": 256,
-        "Timeout": 30,
-        "Role": null,
-        "Policies": [
-          {
-            "DynamoDBCrudPolicy": {
-              "TableName": {
-                "Ref": "UsersRoomsTable"
-              }
-            }
-          },
-          {
-            "DynamoDBCrudPolicy": {
-              "TableName": {
-                "Ref": "RoomsConnectionsTable"
-              }
-            }
-          }
-        ],
-        "Environment": {
-          "Variables": {
-            "USERS_ROOMS_TABLE_NAME": {
-              "Ref": "UsersRoomsTableName"
-            },
-            "ROOMS_CONNECTIONS_TABLE_NAME": {
-              "Ref": "RoomsConnectionsTableName"
-            },
-            "USERS_INDEX_NAME": {
-              "Ref": "UsersIndexName"
-            },
-            "CONNECTIONS_INDEX_NAME": {
-              "Ref": "ConnectionsIndexName"
-            }
-          }
-        }
-      }
-    },
-    "ByeFunction": {
-      "Type": "AWS::Serverless::Function",
-      "Properties": {
-        "Handler": "AWSServerless1::AWSServerless1.Functions::ByeHandler",
-        "Runtime": "dotnetcore3.1",
-        "CodeUri": "",
-        "MemorySize": 256,
-        "Timeout": 30,
-        "Role": null,
-        "Policies": [
-          {
-            "DynamoDBCrudPolicy": {
-              "TableName": {
-                "Ref": "UsersRoomsTable"
-              }
-            }
-          },
-          {
-            "DynamoDBCrudPolicy": {
-              "TableName": {
-                "Ref": "RoomsConnectionsTable"
-              }
-            }
-          }
-        ],
-        "Environment": {
-          "Variables": {
-            "USERS_ROOMS_TABLE_NAME": {
-              "Ref": "UsersRoomsTableName"
-            },
-            "ROOMS_CONNECTIONS_TABLE_NAME": {
-              "Ref": "RoomsConnectionsTableName"
-            },
-            "USERS_INDEX_NAME": {
-              "Ref": "UsersIndexName"
-            },
-            "CONNECTIONS_INDEX_NAME": {
-              "Ref": "ConnectionsIndexName"
-            }
-          }
-        }
-      }
-    },
     "JoinFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
@@ -1025,108 +939,12 @@
             "RouteResponseKey": "$default"
         }
     },
-    "HelloRoute": {
-      "Type": "AWS::ApiGatewayV2::Route",
-      "Properties": {
-        "ApiId": {
-          "Ref": "SimpleChatWebSocketApi"
-        },
-        "RouteKey": "hello",
-        "AuthorizationType": "NONE",
-        "OperationName": "ConnectRoute",
-        "Target": {
-          "Fn::Join": [
-            "/",
-            [
-              "integrations",
-              {
-                "Ref": "HelloInteg"
-              }
-            ]
-          ]
-        }
-      }
-    },
-    "HelloInteg": {
-      "Type": "AWS::ApiGatewayV2::Integration",
-      "Properties": {
-        "ApiId": {
-          "Ref": "SimpleChatWebSocketApi"
-        },
-        "IntegrationType": "AWS_PROXY",
-        "IntegrationUri": {
-          "Fn::Sub": [
-            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
-            {
-              "region": {
-                "Ref": "AWS::Region"
-              },
-              "function": {
-                "Fn::GetAtt": [
-                  "HelloFunction",
-                  "Arn"
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "ByeRoute": {
-      "Type": "AWS::ApiGatewayV2::Route",
-      "Properties": {
-        "ApiId": {
-          "Ref": "SimpleChatWebSocketApi"
-        },
-        "RouteKey": "bye",
-        "AuthorizationType": "NONE",
-        "OperationName": "ConnectRoute",
-        "Target": {
-          "Fn::Join": [
-            "/",
-            [
-              "integrations",
-              {
-                "Ref": "ByeInteg"
-              }
-            ]
-          ]
-        }
-      }
-    },
-    "ByeInteg": {
-      "Type": "AWS::ApiGatewayV2::Integration",
-      "Properties": {
-        "ApiId": {
-          "Ref": "SimpleChatWebSocketApi"
-        },
-        "IntegrationType": "AWS_PROXY",
-        "IntegrationUri": {
-          "Fn::Sub": [
-            "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${function}/invocations",
-            {
-              "region": {
-                "Ref": "AWS::Region"
-              },
-              "function": {
-                "Fn::GetAtt": [
-                  "ByeFunction",
-                  "Arn"
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
     "Deployment": {
       "Type": "AWS::ApiGatewayV2::Deployment",
       "DependsOn": [
         "ConnectRoute",
         "SendMessageRoute",
         "DisconnectRoute",
-        "HelloRoute",
-        "ByeRoute",
         "JoinRoute",
         "LoginRoute",
         "AddRoomRoute",
@@ -1202,34 +1020,6 @@
         "Action": "lambda:InvokeFunction",
         "FunctionName": {
           "Ref": "GetMessagesFunction"
-        },
-        "Principal": "apigateway.amazonaws.com"
-      }
-    },
-    "HelloPermission": {
-      "Type": "AWS::Lambda::Permission",
-      "DependsOn": [
-        "HelloFunction",
-        "SimpleChatWebSocketApi"
-      ],
-      "Properties": {
-        "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Ref": "HelloFunction"
-        },
-        "Principal": "apigateway.amazonaws.com"
-      }
-    },
-    "ByePermission": {
-      "Type": "AWS::Lambda::Permission",
-      "DependsOn": [
-        "ByeFunction",
-        "SimpleChatWebSocketApi"
-      ],
-      "Properties": {
-        "Action": "lambda:InvokeFunction",
-        "FunctionName": {
-          "Ref": "ByeFunction"
         },
         "Principal": "apigateway.amazonaws.com"
       }

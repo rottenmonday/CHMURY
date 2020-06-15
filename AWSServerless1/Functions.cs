@@ -28,10 +28,6 @@ namespace AWSServerless1
 {
     public class Functions
     {
-        public const string ConnectionIdField = "connectionId";
-        public const string RoomIdField = "roomId";
-        public const string UserIdField = "userId";
-        public const string TempRoomName = "Purgatory";
         /// <summary>
         /// Number of previous message to load at a time
         /// </summary>
@@ -45,18 +41,10 @@ namespace AWSServerless1
         string UsersIndex { get; }
         string ConnectionsIndex { get;  }
         string MessagesTable { get; }
-        //string ConnectionsIndex { get; }
         DDBWrappers DDBUtils { get; set; }
 
-        /// <summary>
-        /// DynamoDB service client used to store and retieve connection information from the ConnectionMappingTable
-        /// </summary>
         IAmazonDynamoDB DDBClient { get; }
 
-        /// <summary>
-        /// Factory func to create the AmazonApiGatewayManagementApiClient. This is needed to created per endpoint of the a connection. It is a factory to make it easy for tests
-        /// to moq the creation.
-        /// </summary>
         Func<string, IAmazonApiGatewayManagementApi> ApiGatewayManagementApiClientFactory { get; }
 
 
@@ -84,20 +72,6 @@ namespace AWSServerless1
             DDBUtils = new DDBWrappers(DDBClient, ApiGatewayManagementApiClientFactory,
                                         UsersRoomsTable, RoomsConnectionsTable, MessagesTable, UsersIndex, ConnectionsIndex);
         }
-
-        /// <summary>
-        /// Constructor used for testing allow tests to pass in moq versions of the service clients.
-        /// </summary>
-        /// <param name="ddbClient"></param>
-        /// <param name="apiGatewayManagementApiClientFactory"></param>
-        /// <param name="connectionMappingTable"></param>
-        public Functions(IAmazonDynamoDB ddbClient, Func<string, IAmazonApiGatewayManagementApi> apiGatewayManagementApiClientFactory, string usersTable)
-        {
-            this.DDBClient = ddbClient;
-            this.ApiGatewayManagementApiClientFactory = apiGatewayManagementApiClientFactory;
-            this.UsersRoomsTable = usersTable;
-        }
-
         public async Task<APIGatewayProxyResponse> OnConnectHandler(APIGatewayProxyRequest request, ILambdaContext context)
         {
             try
