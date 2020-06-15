@@ -289,11 +289,12 @@ namespace AWSServerless1
                 };
                 ChatMessageRequest messageRequest = JsonSerializer.Deserialize<ChatMessageRequest>(dataProperty.ToString(), options);
 
-                await DDBUtils.PutMessage(messageRequest.Message, messageRequest.RoomID, messageRequest.UserID);
+                string date = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds.ToString();
+                await DDBUtils.PutMessage(messageRequest.Message, messageRequest.RoomID, messageRequest.UserID, date);
                 ChatMessageResponse chatMsg = new ChatMessageResponse
                 {
                     Message = messageRequest.Message,
-                    Date = DateTime.UtcNow.ToShortTimeString(),
+                    Date = date,
                     Author = messageRequest.UserID,
                     RoomId = messageRequest.RoomID
                 };

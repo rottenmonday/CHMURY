@@ -272,7 +272,7 @@ namespace AWSServerless1.Utility
         /// <param name="roomId">The room in which the message was sent</param>
         /// <param name="user">Author of the message</param>
         /// <returns></returns>
-        public async Task PutMessage(string message, string roomId, string user)
+        public async Task PutMessage(string message, string roomId, string user, string date)
         {
             var putRequest = new PutItemRequest
             {
@@ -280,7 +280,7 @@ namespace AWSServerless1.Utility
                 Item = new Dictionary<string, AttributeValue>
                 {
                     { "RoomId", new AttributeValue { S = $"{roomId}"} },
-                    { "DateId", new AttributeValue { N = (DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds.ToString()} },
+                    { "DateId", new AttributeValue { N = date} },
                     { "UserId", new AttributeValue { S = user} },
                     { "Message", new AttributeValue { S = message} }
 
