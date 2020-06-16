@@ -51,6 +51,10 @@ namespace AWSServerless1.Utility
             _ConnectionsIndex = connectionsIndex;
         }
 
+        /// <summary>
+        /// Gets all users from UsersRoomsTable DDB
+        /// </summary>
+        /// <returns>List of usernames</returns>
         public async Task<List<string>> GetAllUsers()
         {
             var scanRequest = new ScanRequest
@@ -68,6 +72,11 @@ namespace AWSServerless1.Utility
             return retVal;
         }
 
+        /// <summary>
+        /// Gets all custom rooms to which user belongs to
+        /// </summary>
+        /// <param name="userId">Id of user</param>
+        /// <returns>First list is a list of room names, second list is a list of ids</returns>
         public async Task<(List<string>, List<string>)> GetUserCustomRooms(string userId)
         {
             var queryRequest = new QueryRequest
@@ -94,6 +103,13 @@ namespace AWSServerless1.Utility
             return (retNames, retIds);
         }
 
+        /// <summary>
+        /// Adds a custom room with a given name and with users given
+        /// </summary>
+        /// <param name="users">Users to be added to room</param>
+        /// <param name="roomName">Name to be given to the room</param>
+        /// <param name="connectionId">Identifier of the room creator, so he can be automatically added to room</param>
+        /// <returns>Room id</returns>
         public async Task<string> AddCustomRoom(List<string> users, string roomName, string connectionId)
         {
             string roomId = Guid.NewGuid().ToString();
@@ -139,6 +155,14 @@ namespace AWSServerless1.Utility
             return roomId;
         }
 
+        /// <summary>
+        /// Generates a normal (1 on 1) room. If such room exists, it just passes its id back to user
+        /// and adds both users to connections table. Otherwise, new room has to be created.
+        /// </summary>
+        /// <param name="user1Id">User who wants to start a conversation</param>
+        /// <param name="user2Id">Interlocutor</param>
+        /// <param name="connectionId">Connection of user who wants to join. If he's not yet connected he will be</param>
+        /// <returns>Id of room</returns>
         public async Task<string> GenerateNormalRoom(string user1Id, string user2Id, string connectionId)
         {
             var queryRequest = new QueryRequest
@@ -151,7 +175,6 @@ namespace AWSServerless1.Utility
                     {":partitionkeyval", new AttributeValue { S = $"user-{user1Id}"} },
                     {":sortkeyval", new AttributeValue { S = $"room"} },
                     {":predicate1", new AttributeValue { BOOL = false } },
-                    //{":inter", new AttributeValue { S = "Interlocutor" } },
                     {":user2", new AttributeValue { S = user2Id } }
                 },
                 ProjectionExpression = "TargetId"
@@ -247,6 +270,11 @@ namespace AWSServerless1.Utility
             }
         }
 
+        /// <summary>
+        /// Add user connection to all rooms he belongs to (when logging in)
+        /// </summary>
+        /// <param name="userId">User who just logged in</param>
+        /// <param name="connectionId">Connection id of this user</param>
         public async Task AddUserToHisRooms(string userId, string connectionId)
         {
             // retrieve rooms ids
@@ -279,6 +307,10 @@ namespace AWSServerless1.Utility
 
         }
 
+        /// <summary>
+        /// Remove a connection from all rooms it belongs to
+        /// </summary>
+        /// <param name="connectionId">Connection id</param>
         public async Task RemoveConnectionFromTable(string connectionId)
         {
             var queryRequest = new QueryRequest
